@@ -19,17 +19,20 @@ then
 fi
 
 echo "Resample"
-mkdir -p $DATA_DIR/v1resampled/IXI/t2
-python resample.py -i $INPUT_DIR/t2 -o $DATA_DIR/v1resampled/IXI/t2 -r 1.0 1.0 1.0 
-# rename files for standard naming
-for file in $DATA_DIR/v1resampled/IXI/t2/*
-do
-  mv "$file" "${file%-T2.nii.gz}_t2.nii.gz"
-done
+# mkdir -p $DATA_DIR/v1resampled/IXI/t2
+# python resample.py -i $INPUT_DIR/t2 -o $DATA_DIR/v1resampled/IXI/t2 -r 1.0 1.0 1.0 
+# # rename files for standard naming
+# for file in $DATA_DIR/v1resampled/IXI/t2/*
+# do
+#   mv "$file" "${file%-T2.nii.gz}_t2.nii.gz"
+# done
 
 echo "Generate masks"
-CUDA_VISIBLE_DEVICES=0 hd-bet -i $DATA_DIR/v1resampled/IXI/t2 -o $DATA_DIR/v2skullstripped/IXI/t2 
+CUDA_VISIBLE_DEVICES=0 hd-bet -i $DATA_DIR/v1resampled/IXI/t2 -o $DATA_DIR/v2skullstripped/IXI/t2
+#cp  -r $DATA_DIR/v1resampled/IXI/t2 $DATA_DIR/v2skullstripped/IXI/
+echo "hd-bet don#########################################e"
 python extract_masks.py -i $DATA_DIR/v2skullstripped/IXI/t2 -o $DATA_DIR/v2skullstripped/IXI/mask
+echo "extract done##############################################"
 python replace.py -i $DATA_DIR/v2skullstripped/IXI/mask -s " _t2" ""
 
 echo "Register t2"

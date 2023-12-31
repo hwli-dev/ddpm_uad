@@ -159,10 +159,13 @@ def train(cfg: DictConfig) -> Optional[float]:
             preds_dict = {}
             preds_dict = {'val':{},'test':{}} # a dict for each data set
             
-            sets = {
-                    't2':['Datamodules_eval.Brats21','Datamodules_eval.MSLUB','Datamodules_train.IXI'],
-                   }
+            # sets = {
+            #         't2':['Datamodules_eval.Brats21','Datamodules_eval.MSLUB','Datamodules_train.IXI'],
+            #        }
             
+            sets = {
+                    't2':['Datamodules_eval.Brats21','Datamodules_train.IXI'],
+                    }
                 
             for set in cfg.datamodule.cfg.testsets :
                 if not set in sets[cfg.datamodule.cfg.mode]: # skip testsets of different modalities

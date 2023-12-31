@@ -26,6 +26,7 @@ def arg_parser():
 def main(args=None):
     args = arg_parser().parse_args(args)
     try:
+        print(args.img_dir)
         if not os.path.isdir(args.img_dir):
             raise ValueError('(-i / --img-dir) argument needs to be a directory of NIfTI images.')
         Path(args.out_dir).mkdir(parents=True ,exist_ok=True)

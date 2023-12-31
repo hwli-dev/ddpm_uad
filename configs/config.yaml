@@ -51,4 +51,9 @@ new_wandb_run: False # if we want to reevaluate to a new wandb run
 checkpoint: 'best' # which checkpoints to load
 
 
-load_checkpoint: path_to_ckpt # path to checkpoint to load
+#load_checkpoint: path_to_ckpt # path to checkpoint to load
+
+#load_checkpoint: /data/hongweili/code/patched-Diffusion-Models-UAD/log_dir/logs/runs/DDPM_2D_patched/DDPM_patched_2D_IXI_DDPM_2D_patched__2023-12-09_12-58-54
+#load_checkpoint: /data/hongweili/code/patched-Diffusion-Models-UAD/log_dir/logs/runs/DDPM_2D/DDPM_2D_IXI_DDPM_2D__2023-12-10_21-12-38l
+load_checkpoint: /data/hongweili/code/patched-Diffusion-Models-UAD/log_dir/logs/runs/DDPM_2D_patched/DDPM_patched_2D_IXI_DDPM_2D_patched__2023-12-13_23-14-59/
+#resume_train: True

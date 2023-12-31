@@ -383,14 +383,14 @@ class GaussianDiffusion(nn.Module):
         return posterior_mean, posterior_variance, posterior_log_variance_clipped
 
     def model_predictions(self, x, t, cond, cond_scale, clip_x_start=False):
-        if self.use_spatial_transformer:
-            if x.shape[1] == 2: # if channel conditioning is used, we indicate the patch by ones
-                x[:,1][x[:,1]!=-1]=1
-            model_output = self.model.forward_with_cond_scale(x, t, cond = cond, context = cond.unsqueeze(1), cond_scale = cond_scale) # predict the noise that has been added to x_start or directly predict x_start from the noisy x, conditioned by the timestep t, cond
-            if x.shape[1] == 2: 
-                x = x[:,0].unsqueeze(1)
-        else: 
-            model_output = self.model.forward_with_cond_scale(x, t, cond = cond, cond_scale = cond_scale) # predict the noise that has been added to x_start or directly predict x_start from the noisy x, conditioned by the timestep t, cond
+        # if self.use_spatial_transformer:
+        #     if x.shape[1] == 2: # if channel conditioning is used, we indicate the patch by ones
+        #         x[:,1][x[:,1]!=-1]=1
+        #     model_output = self.model.forward_with_cond_scale(x, t, cond = cond, context = cond.unsqueeze(1), cond_scale = cond_scale) # predict the noise that has been added to x_start or directly predict x_start from the noisy x, conditioned by the timestep t, cond
+        #     if x.shape[1] == 2: 
+        #         x = x[:,0].unsqueeze(1)
+        # else: 
+        model_output = self.model.forward_with_cond_scale(x, t, cond = cond, cond_scale = cond_scale) # predict the noise that has been added to x_start or directly predict x_start from the noisy x, conditioned by the timestep t, cond
         maybe_clip = partial(torch.clamp, min = -1., max = 1.) if clip_x_start else identity
 
         if self.objective == 'pred_noise':
@@ -418,6 +418,7 @@ class GaussianDiffusion(nn.Module):
         b, *_, device = *x.shape, x.device
 
         batched_times = torch.full((x.shape[0],), t, device = x.device, dtype = torch.long)
+        #batched_times = torch.tensor([t], device=x.device).repeat(x.shape[0])
 
         model_mean, _, model_log_variance = self.p_mean_variance(x = x, t = batched_times, clip_denoised = clip_denoised, cond = cond, cond_scale = cond_scale)
         if noise is None:
@@ -430,7 +431,7 @@ class GaussianDiffusion(nn.Module):
     @torch.no_grad()
     def p_sample_loop(self, shape, cond = None, cond_scale = 1., box = None, start_t = 0, noise = None, x_start=None):
         batch, device = shape[0], self.betas.device
-        T = self.num_timesteps if start_t==0 else start_t
+        T = 500 if start_t==0 else start_t #hwli
         if noise is not None: 
             noise = gen_noise(self.cfg, shape).to(device)
             img = self.q_sample(x_start = x_start, t = torch.tensor([T],device=device), noise = noise)[:,0].unsqueeze(1)
@@ -545,10 +546,40 @@ class GaussianDiffusion(nn.Module):
             return F.mse_loss
         else:
             raise ValueError(f'invalid loss type {self.loss_type}')
+        
+    @torch.no_grad()   #hwli
+    def forward_backward(
+            self, x_start, t, noise = None
+            ):
+        noise = default(noise, lambda: torch.randn_like(x_start))
+        x_t = self.q_sample(x_start = x_start, t = t, noise = noise) #forward
 
-    def p_losses(self, x_start, t, cond = None, noise = None, box=None, scale_patch=1, onlybox=False, mask=None):
+        # for t_step in range(int(t) - 1, -1, -1):
+        #     model_out = self.model(x_t, t_step, cond = None)
+        #     if self.objective == 'pred_noise':
+            
+        #     elif self.objective == 'pred_x0':
+
+        #     else:
+        #         raise ValueError(f'unknown objective {self.objective}')
+
+
+        return x_t()
+
+
+    def p_losses(self, x_start, t, cond = None, noise = None, box=None, scale_patch=1, onlybox=False, mask=None, guidance=False):
         b, c, h, w = x_start.shape
+
         noise = default(noise, lambda: torch.randn_like(x_start)) # some noise with zero mean and unit variance
+
+        if guidance: # hwli
+            x_t = self.sample(x_start = x_start, noise = noise)
+            loss = self.loss_fn(x_t, x_start, reduction = 'none')
+            loss = reduce(loss, 'b ... -> b (...)', 'mean')
+            loss = loss * extract(self.p2_loss_weight, t, loss.shape)
+
+            return loss.mean(), x_t
+
 
         x = self.q_sample(x_start = x_start, t = t, noise = noise) # generate a noisy image from the start image at timestep t
         

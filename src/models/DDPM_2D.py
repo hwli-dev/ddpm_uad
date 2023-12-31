@@ -151,9 +151,9 @@ class DDPM_2D(LightningModule):
         else: 
             noise = None
 
-        # reconstruct
-        loss_diff, reco = self.diffusion(input,t=self.test_timesteps-1,noise=noise)
-        
+        # reconstruct #hwli
+        loss_diff, reco = self.diffusion(input,t=self.test_timesteps-1,noise=noise, guidance=False)
+        #loss_diff, reco = self.diffusion(input,399,noise=noise, guidance=False)
 
         # calculate loss and Anomalyscores
         AnomalyScoreComb.append(loss_diff.cpu())
